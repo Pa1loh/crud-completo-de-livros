@@ -1,9 +1,11 @@
 using Infra.Configuracao;
+using Servico.Configuracao;
 
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddControllers();
 builder.Services.AdicionarInfraestrutura(builder.Configuration);
+builder.Services.AdicionarServicos();
 
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(opcoes =>

@@ -20,7 +20,6 @@
 
     <ItemGroup>
       <ProjectReference Include="..\Infraestrutura\Infraestrutura.csproj" />
-      <ProjectReference Include="..\Dominio\Dominio.csproj" />
       <ProjectReference Include="..\Servico\Servico.csproj" />
     </ItemGroup>
 
