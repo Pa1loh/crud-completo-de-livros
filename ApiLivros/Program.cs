@@ -1,5 +1,6 @@
 using Infra.Configuracao;
 using Servico.Configuracao;
+using ApiLivros.Middleware;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -23,19 +24,34 @@ builder.Services.AddSwaggerGen(opcoes =>
     });
 });
 
+builder.Services.AddCors(opcoes =>
+{
+    opcoes.AddPolicy("PermitirTodos", policy =>
+    {
+        policy.AllowAnyOrigin()
+            .AllowAnyMethod()
+            .AllowAnyHeader();
+    });
+});
+
 var app = builder.Build();
+
+app.UseMiddleware<TratamentoGlobalErrosMiddleware>();
 
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
     app.UseSwaggerUI(opcoes =>
     {
-        opcoes.SwaggerEndpoint("/swagger/v1/swagger.json", "API de Livros v1");
+        opcoes.SwaggerEndpoint("/swagger/v1/swagger.json", "API de Livros v1.0");
         opcoes.RoutePrefix = string.Empty;
+        opcoes.DocumentTitle = "API de Livros - Documentação";
+        opcoes.DisplayRequestDuration();
     });
 }
 
 app.UseHttpsRedirection();
+app.UseCors("PermitirTodos");
 app.UseAuthorization();
 app.MapControllers();
 

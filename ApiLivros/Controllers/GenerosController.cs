@@ -1,120 +1,82 @@
 using Microsoft.AspNetCore.Mvc;
 using Servico.Dtos;
 using Servico.Interfaces;
+using ApiLivros.ViewModels;
+using ApiLivros.Extensions;
 
 namespace ApiLivros.Controllers;
 
 [ApiController]
-[Route("api/generos")]
-public class GenerosController : ControllerBase
+[Route("api/v1/generos")]
+public class GenerosControlador : ControllerBase
 {
     private readonly IGeneroServico _generoServico;
 
-    public GenerosController(IGeneroServico generoServico)
+    public GenerosControlador(IGeneroServico generoServico)
     {
         _generoServico = generoServico;
     }
 
     [HttpPost]
-    public async Task<ActionResult<GeneroDto>> CriarAsync([FromBody] CriarGeneroDto dto)
+    public async Task<ActionResult<GeneroViewModel>> CriarAsync([FromBody] CriarGeneroDto dto)
     {
         if (!ModelState.IsValid)
             return BadRequest(ModelState);
 
-        try
-        {
-            var genero = await _generoServico.CriarAsync(dto);
-            return Created($"/api/generos/{genero.Id}", genero);
-        }
-        catch (InvalidOperationException ex)
-        {
-            return BadRequest(new { mensagem = ex.Message });
-        }
-        catch (ArgumentException ex)
-        {
-            return BadRequest(new { mensagem = ex.Message });
-        }
-        catch (Exception)
-        {
-            return StatusCode(500, new { mensagem = "Erro interno do servidor" });
-        }
+        var generoDto = await _generoServico.CriarAsync(dto);
+        var viewModel = generoDto.ParaViewModel();
+        
+        return CreatedAtAction(
+            nameof(ObterPorIdAsync),
+            new { id = viewModel.Id },
+            viewModel);
     }
 
     [HttpGet("{id:guid}")]
-    public async Task<ActionResult<GeneroDto>> ObterPorIdAsync(Guid id)
+    public async Task<ActionResult<GeneroViewModel>> ObterPorIdAsync(Guid id)
     {
-        try
-        {
-            var genero = await _generoServico.ObterPorIdAsync(id);
-            
-            if (genero == null)
-                return NotFound(new { mensagem = "Gênero não encontrado" });
+        if (id == Guid.Empty)
+            return BadRequest(new { mensagem = "ID inválido" });
 
-            return Ok(genero);
-        }
-        catch (Exception)
-        {
-            return StatusCode(500, new { mensagem = "Erro interno do servidor" });
-        }
+        var generoDto = await _generoServico.ObterPorIdAsync(id);
+        
+        if (generoDto == null)
+            return NotFound(new { mensagem = "Gênero não encontrado" });
+
+        return Ok(generoDto.ParaViewModel());
     }
 
     [HttpGet]
-    public async Task<ActionResult<IEnumerable<GeneroDto>>> ObterTodosAsync()
+    public async Task<ActionResult<IEnumerable<GeneroViewModel>>> ObterTodosAsync()
     {
-        try
-        {
-            var generos = await _generoServico.ObterTodosAsync();
-            return Ok(generos);
-        }
-        catch (Exception)
-        {
-            return StatusCode(500, new { mensagem = "Erro interno do servidor" });
-        }
+        var generosDto = await _generoServico.ObterTodosAsync();
+        var viewModels = generosDto.Select(dto => dto.ParaViewModel());
+        return Ok(viewModels);
     }
 
     [HttpPut("{id:guid}")]
-    public async Task<ActionResult<GeneroDto>> AtualizarAsync(Guid id, [FromBody] AtualizarGeneroDto dto)
+    public async Task<ActionResult<GeneroViewModel>> AtualizarAsync(Guid id, [FromBody] AtualizarGeneroDto dto)
     {
         if (!ModelState.IsValid)
             return BadRequest(ModelState);
 
-        try
-        {
-            var genero = await _generoServico.AtualizarAsync(id, dto);
-            return Ok(genero);
-        }
-        catch (InvalidOperationException ex)
-        {
-            return BadRequest(new { mensagem = ex.Message });
-        }
-        catch (ArgumentException ex)
-        {
-            return BadRequest(new { mensagem = ex.Message });
-        }
-        catch (Exception)
-        {
-            return StatusCode(500, new { mensagem = "Erro interno do servidor" });
-        }
+        if (id == Guid.Empty)
+            return BadRequest(new { mensagem = "ID inválido" });
+
+        var generoDto = await _generoServico.AtualizarAsync(id, dto);
+        return Ok(generoDto.ParaViewModel());
     }
 
     [HttpDelete("{id:guid}")]
     public async Task<ActionResult> RemoverAsync(Guid id)
     {
-        try
-        {
-            if (!await _generoServico.ExisteAsync(id))
-                return NotFound(new { mensagem = "Gênero não encontrado" });
+        if (id == Guid.Empty)
+            return BadRequest(new { mensagem = "ID inválido" });
 
-            await _generoServico.RemoverAsync(id);
-            return NoContent();
-        }
-        catch (InvalidOperationException ex)
-        {
-            return BadRequest(new { mensagem = ex.Message });
-        }
-        catch (Exception)
-        {
-            return StatusCode(500, new { mensagem = "Erro interno do servidor" });
-        }
+        if (!await _generoServico.ExisteAsync(id))
+            return NotFound(new { mensagem = "Gênero não encontrado" });
+
+        await _generoServico.RemoverAsync(id);
+        return NoContent();
     }
 }

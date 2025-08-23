@@ -1,148 +1,104 @@
 using Microsoft.AspNetCore.Mvc;
 using Servico.Dtos;
 using Servico.Interfaces;
+using ApiLivros.ViewModels;
+using ApiLivros.Extensions;
 
 namespace ApiLivros.Controllers;
 
 [ApiController]
-[Route("api/livros")]
-public class LivrosController : ControllerBase
+[Route("api/v1/livros")]
+public class LivrosControlador : ControllerBase
 {
     private readonly ILivroServico _livroServico;
 
-    public LivrosController(ILivroServico livroServico)
+    public LivrosControlador(ILivroServico livroServico)
     {
         _livroServico = livroServico;
     }
 
     [HttpPost]
-    public async Task<ActionResult<LivroDto>> CriarAsync([FromBody] CriarLivroDto dto)
+    public async Task<ActionResult<LivroViewModel>> CriarAsync([FromBody] CriarLivroDto dto)
     {
         if (!ModelState.IsValid)
             return BadRequest(ModelState);
 
-        try
-        {
-            var livro = await _livroServico.CriarAsync(dto);
-            return Created($"/api/livros/{livro.Id}", livro);
-        }
-        catch (InvalidOperationException ex)
-        {
-            return BadRequest(new { mensagem = ex.Message });
-        }
-        catch (ArgumentException ex)
-        {
-            return BadRequest(new { mensagem = ex.Message });
-        }
-        catch (Exception)
-        {
-            return StatusCode(500, new { mensagem = "Erro interno do servidor" });
-        }
+        var livroDto = await _livroServico.CriarAsync(dto);
+        var viewModel = livroDto.ParaViewModel();
+        
+        return CreatedAtAction(
+            nameof(ObterPorIdAsync),
+            new { id = viewModel.Id },
+            viewModel);
     }
 
     [HttpGet("{id:guid}")]
-    public async Task<ActionResult<LivroDto>> ObterPorIdAsync(Guid id)
+    public async Task<ActionResult<LivroViewModel>> ObterPorIdAsync(Guid id)
     {
-        try
-        {
-            var livro = await _livroServico.ObterPorIdAsync(id);
-            
-            if (livro == null)
-                return NotFound(new { mensagem = "Livro não encontrado" });
+        if (id == Guid.Empty)
+            return BadRequest(new { mensagem = "ID inválido" });
 
-            return Ok(livro);
-        }
-        catch (Exception)
-        {
-            return StatusCode(500, new { mensagem = "Erro interno do servidor" });
-        }
+        var livroDto = await _livroServico.ObterPorIdAsync(id);
+        
+        if (livroDto == null)
+            return NotFound(new { mensagem = "Livro não encontrado" });
+
+        return Ok(livroDto.ParaViewModel());
     }
 
     [HttpGet]
-    public async Task<ActionResult<IEnumerable<LivroDto>>> ObterTodosAsync()
+    public async Task<ActionResult<IEnumerable<LivroViewModel>>> ObterTodosAsync()
     {
-        try
-        {
-            var livros = await _livroServico.ObterTodosAsync();
-            return Ok(livros);
-        }
-        catch (Exception)
-        {
-            return StatusCode(500, new { mensagem = "Erro interno do servidor" });
-        }
+        var livrosDto = await _livroServico.ObterTodosAsync();
+        var viewModels = livrosDto.Select(dto => dto.ParaViewModel());
+        return Ok(viewModels);
     }
 
     [HttpGet("autor/{autorId:guid}")]
-    public async Task<ActionResult<IEnumerable<LivroDto>>> ObterPorAutorAsync(Guid autorId)
+    public async Task<ActionResult<IEnumerable<LivroViewModel>>> ObterPorAutorAsync(Guid autorId)
     {
-        try
-        {
-            var livros = await _livroServico.ObterPorAutorAsync(autorId);
-            return Ok(livros);
-        }
-        catch (Exception)
-        {
-            return StatusCode(500, new { mensagem = "Erro interno do servidor" });
-        }
+        if (autorId == Guid.Empty)
+            return BadRequest(new { mensagem = "ID do autor inválido" });
+
+        var livrosDto = await _livroServico.ObterPorAutorAsync(autorId);
+        var viewModels = livrosDto.Select(dto => dto.ParaViewModel());
+        return Ok(viewModels);
     }
 
     [HttpGet("genero/{generoId:guid}")]
-    public async Task<ActionResult<IEnumerable<LivroDto>>> ObterPorGeneroAsync(Guid generoId)
+    public async Task<ActionResult<IEnumerable<LivroViewModel>>> ObterPorGeneroAsync(Guid generoId)
     {
-        try
-        {
-            var livros = await _livroServico.ObterPorGeneroAsync(generoId);
-            return Ok(livros);
-        }
-        catch (Exception)
-        {
-            return StatusCode(500, new { mensagem = "Erro interno do servidor" });
-        }
+        if (generoId == Guid.Empty)
+            return BadRequest(new { mensagem = "ID do gênero inválido" });
+
+        var livrosDto = await _livroServico.ObterPorGeneroAsync(generoId);
+        var viewModels = livrosDto.Select(dto => dto.ParaViewModel());
+        return Ok(viewModels);
     }
 
     [HttpPut("{id:guid}")]
-    public async Task<ActionResult<LivroDto>> AtualizarAsync(Guid id, [FromBody] AtualizarLivroDto dto)
+    public async Task<ActionResult<LivroViewModel>> AtualizarAsync(Guid id, [FromBody] AtualizarLivroDto dto)
     {
         if (!ModelState.IsValid)
             return BadRequest(ModelState);
 
-        try
-        {
-            var livro = await _livroServico.AtualizarAsync(id, dto);
-            return Ok(livro);
-        }
-        catch (InvalidOperationException ex)
-        {
-            return BadRequest(new { mensagem = ex.Message });
-        }
-        catch (ArgumentException ex)
-        {
-            return BadRequest(new { mensagem = ex.Message });
-        }
-        catch (Exception)
-        {
-            return StatusCode(500, new { mensagem = "Erro interno do servidor" });
-        }
+        if (id == Guid.Empty)
+            return BadRequest(new { mensagem = "ID inválido" });
+
+        var livroDto = await _livroServico.AtualizarAsync(id, dto);
+        return Ok(livroDto.ParaViewModel());
     }
 
     [HttpDelete("{id:guid}")]
     public async Task<ActionResult> RemoverAsync(Guid id)
     {
-        try
-        {
-            if (!await _livroServico.ExisteAsync(id))
-                return NotFound(new { mensagem = "Livro não encontrado" });
+        if (id == Guid.Empty)
+            return BadRequest(new { mensagem = "ID inválido" });
 
-            await _livroServico.RemoverAsync(id);
-            return NoContent();
-        }
-        catch (InvalidOperationException ex)
-        {
-            return BadRequest(new { mensagem = ex.Message });
-        }
-        catch (Exception)
-        {
-            return StatusCode(500, new { mensagem = "Erro interno do servidor" });
-        }
+        if (!await _livroServico.ExisteAsync(id))
+            return NotFound(new { mensagem = "Livro não encontrado" });
+
+        await _livroServico.RemoverAsync(id);
+        return NoContent();
     }
 }
