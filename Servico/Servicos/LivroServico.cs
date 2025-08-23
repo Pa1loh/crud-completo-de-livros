@@ -17,6 +17,9 @@ public class LivroServico : ILivroServico
 
     public async Task<LivroDto> CriarAsync(CriarLivroDto dto)
     {
+        if (await ExisteTituloAsync(dto.Titulo))
+            throw new InvalidOperationException("Já existe um livro com este título");
+
         await ValidarReferencasAsync(dto.AutorId, dto.GeneroId);
 
         var livro = new Livro(Guid.NewGuid(), dto.Titulo, dto.AutorId, dto.GeneroId);
@@ -152,5 +155,12 @@ public class LivroServico : ILivroServico
             DataCriacao = livro.DataCriacao,
             DataAtualizacao = livro.DataAtualizacao
         };
+    }
+
+    private async Task<bool> ExisteTituloAsync(string titulo)
+    {
+        return await _contexto.Livros
+            .AsNoTracking()
+            .AnyAsync(l => l.Titulo == titulo);
     }
 }
