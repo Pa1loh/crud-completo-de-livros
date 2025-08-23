@@ -26,10 +26,7 @@ public class GenerosControlador : ControllerBase
         var generoDto = await _generoServico.CriarAsync(dto);
         var viewModel = generoDto.ParaViewModel();
         
-        return CreatedAtAction(
-            nameof(ObterPorIdAsync),
-            new { id = viewModel.Id },
-            viewModel);
+        return Created($"api/v1/generos/{viewModel.Id}", viewModel);
     }
 
     [HttpGet("{id:guid}")]

@@ -26,10 +26,7 @@ public class AutoresControlador : ControllerBase
         var autorDto = await _autorServico.CriarAsync(dto);
         var viewModel = autorDto.ParaViewModel();
         
-        return CreatedAtAction(
-            nameof(ObterPorIdAsync),
-            new { id = viewModel.Id },
-            viewModel);
+        return Created($"api/v1/autores/{viewModel.Id}", viewModel);
     }
 
     [HttpGet("{id:guid}")]

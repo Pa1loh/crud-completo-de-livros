@@ -26,10 +26,7 @@ public class LivrosControlador : ControllerBase
         var livroDto = await _livroServico.CriarAsync(dto);
         var viewModel = livroDto.ParaViewModel();
         
-        return CreatedAtAction(
-            nameof(ObterPorIdAsync),
-            new { id = viewModel.Id },
-            viewModel);
+        return Created($"api/v1/livros/{viewModel.Id}", viewModel);
     }
 
     [HttpGet("{id:guid}")]
