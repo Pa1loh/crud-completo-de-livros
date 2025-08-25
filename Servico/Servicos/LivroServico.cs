@@ -1,4 +1,5 @@
 using Dominio.Entidades;
+using Dominio.Excecoes;
 using Infra.Contexto;
 using Microsoft.EntityFrameworkCore;
 using Servico.Dtos;
@@ -18,7 +19,7 @@ public class LivroServico : ILivroServico
     public async Task<LivroDto> CriarAsync(CriarLivroDto dto)
     {
         if (await ExisteTituloAsync(dto.Titulo))
-            throw new InvalidOperationException("Já existe um livro com este título");
+            throw new RecursoDuplicadoException("livro", $"título '{dto.Titulo}'");
 
         await ValidarReferencasAsync(dto.AutorId, dto.GeneroId);
 
@@ -32,24 +33,13 @@ public class LivroServico : ILivroServico
 
     public async Task<LivroDto?> ObterPorIdAsync(Guid id)
     {
-        var livro = await _contexto.Livros
-            .AsNoTracking()
-            .Include(l => l.Autor)
-            .Include(l => l.Genero)
-            .FirstOrDefaultAsync(l => l.Id == id);
-
+        var livro = await ObterLivroComIncludesAsync(l => l.Id == id);
         return livro != null ? ConverterParaDto(livro) : null;
     }
 
     public async Task<IEnumerable<LivroDto>> ObterTodosAsync()
     {
-        var livros = await _contexto.Livros
-            .AsNoTracking()
-            .Include(l => l.Autor)
-            .Include(l => l.Genero)
-            .OrderBy(l => l.Titulo)
-            .ToListAsync();
-
+        var livros = await ObterLivrosComIncludesAsync();
         return livros.Select(ConverterParaDto);
     }
 
@@ -59,7 +49,7 @@ public class LivroServico : ILivroServico
             .FirstOrDefaultAsync(l => l.Id == id);
 
         if (livro == null)
-            throw new InvalidOperationException("Livro não encontrado");
+            throw new RecursoNaoEncontradoException("Livro");
 
         await ValidarReferencasAsync(dto.AutorId, dto.GeneroId);
 
@@ -75,7 +65,7 @@ public class LivroServico : ILivroServico
             .FirstOrDefaultAsync(l => l.Id == id);
 
         if (livro == null)
-            throw new InvalidOperationException("Livro não encontrado");
+            throw new RecursoNaoEncontradoException("Livro");
 
         _contexto.Livros.Remove(livro);
         await _contexto.SaveChangesAsync();
@@ -90,28 +80,36 @@ public class LivroServico : ILivroServico
 
     public async Task<IEnumerable<LivroDto>> ObterPorAutorAsync(Guid autorId)
     {
-        var livros = await _contexto.Livros
-            .AsNoTracking()
-            .Include(l => l.Autor)
-            .Include(l => l.Genero)
-            .Where(l => l.AutorId == autorId)
-            .OrderBy(l => l.Titulo)
-            .ToListAsync();
-
+        var livros = await ObterLivrosComIncludesAsync(l => l.AutorId == autorId);
         return livros.Select(ConverterParaDto);
     }
 
     public async Task<IEnumerable<LivroDto>> ObterPorGeneroAsync(Guid generoId)
     {
-        var livros = await _contexto.Livros
+        var livros = await ObterLivrosComIncludesAsync(l => l.GeneroId == generoId);
+        return livros.Select(ConverterParaDto);
+    }
+
+    private async Task<Livro?> ObterLivroComIncludesAsync(System.Linq.Expressions.Expression<Func<Livro, bool>> filtro)
+    {
+        return await _contexto.Livros
             .AsNoTracking()
             .Include(l => l.Autor)
             .Include(l => l.Genero)
-            .Where(l => l.GeneroId == generoId)
-            .OrderBy(l => l.Titulo)
-            .ToListAsync();
+            .FirstOrDefaultAsync(filtro);
+    }
 
-        return livros.Select(ConverterParaDto);
+    private async Task<List<Livro>> ObterLivrosComIncludesAsync(System.Linq.Expressions.Expression<Func<Livro, bool>>? filtro = null)
+    {
+        IQueryable<Livro> query = _contexto.Livros
+            .AsNoTracking()
+            .Include(l => l.Autor)
+            .Include(l => l.Genero);
+
+        if (filtro != null)
+            query = query.Where(filtro);
+
+        return await query.OrderBy(l => l.Titulo).ToListAsync();
     }
 
     private async Task ValidarReferencasAsync(Guid autorId, Guid generoId)
@@ -121,25 +119,20 @@ public class LivroServico : ILivroServico
             .AnyAsync(a => a.Id == autorId);
 
         if (!autorExiste)
-            throw new InvalidOperationException("Autor não encontrado");
+            throw new RecursoNaoEncontradoException("Autor");
 
         var generoExiste = await _contexto.Generos
             .AsNoTracking()
             .AnyAsync(g => g.Id == generoId);
 
         if (!generoExiste)
-            throw new InvalidOperationException("Gênero não encontrado");
+            throw new RecursoNaoEncontradoException("Gênero");
     }
 
     private async Task<LivroDto> ObterLivroComReferencasAsync(Guid id)
     {
-        var livro = await _contexto.Livros
-            .AsNoTracking()
-            .Include(l => l.Autor)
-            .Include(l => l.Genero)
-            .FirstAsync(l => l.Id == id);
-
-        return ConverterParaDto(livro);
+        var livro = await ObterLivroComIncludesAsync(l => l.Id == id);
+        return ConverterParaDto(livro!);
     }
 
     private static LivroDto ConverterParaDto(Livro livro)

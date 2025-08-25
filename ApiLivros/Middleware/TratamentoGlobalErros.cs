@@ -1,14 +1,15 @@
 using System.Net;
 using System.Text.Json;
+using Dominio.Excecoes;
 
 namespace ApiLivros.Middleware;
 
-public class TratamentoGlobalErrosMiddleware
+public class TratamentoGlobalErros
 {
     private readonly RequestDelegate _proximo;
-    private readonly ILogger<TratamentoGlobalErrosMiddleware> _logger;
+    private readonly ILogger<TratamentoGlobalErros> _logger;
 
-    public TratamentoGlobalErrosMiddleware(RequestDelegate proximo, ILogger<TratamentoGlobalErrosMiddleware> logger)
+    public TratamentoGlobalErros(RequestDelegate proximo, ILogger<TratamentoGlobalErros> logger)
     {
         _proximo = proximo;
         _logger = logger;
@@ -31,12 +32,7 @@ public class TratamentoGlobalErrosMiddleware
     {
         contexto.Response.ContentType = "application/json";
         
-        var resposta = new
-        {
-            mensagem = ObterMensagemErro(excecao),
-            detalhes = ObterDetalhesErro(excecao)
-        };
-
+        var resposta = new { mensagem = excecao.Message };
         contexto.Response.StatusCode = ObterCodigoStatus(excecao);
         
         var opcoes = new JsonSerializerOptions
@@ -48,35 +44,14 @@ public class TratamentoGlobalErrosMiddleware
         await contexto.Response.WriteAsync(json);
     }
 
-    private static string ObterMensagemErro(Exception excecao)
-    {
-        return excecao switch
-        {
-            ArgumentException => excecao.Message,
-            InvalidOperationException => excecao.Message,
-            KeyNotFoundException => "Recurso não encontrado",
-            _ => "Erro interno do servidor"
-        };
-    }
-
-    private static string? ObterDetalhesErro(Exception excecao)
-    {
-        return excecao switch
-        {
-            ArgumentException => null,
-            InvalidOperationException => null,
-            KeyNotFoundException => null,
-            _ => "Ocorreu um erro inesperado. Tente novamente mais tarde."
-        };
-    }
-
     private static int ObterCodigoStatus(Exception excecao)
     {
         return excecao switch
         {
+            RecursoNaoEncontradoException => (int)HttpStatusCode.NotFound,
+            RecursoDuplicadoException => (int)HttpStatusCode.Conflict,
+            RegraDeNegocioException => (int)HttpStatusCode.BadRequest,
             ArgumentException => (int)HttpStatusCode.BadRequest,
-            InvalidOperationException => (int)HttpStatusCode.BadRequest,
-            KeyNotFoundException => (int)HttpStatusCode.NotFound,
             _ => (int)HttpStatusCode.InternalServerError
         };
     }

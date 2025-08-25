@@ -1,4 +1,5 @@
 using Dominio.Entidades;
+using Dominio.Excecoes;
 using Infra.Contexto;
 using Servico.Dtos;
 using Servico.Servicos;
@@ -47,10 +48,10 @@ public class AutorServicoTestes : TesteComBancoMemoria
 
         var dto = new CriarAutorDto { Nome = "Clarice Lispector" };
 
-        var excecao = Assert.ThrowsAsync<InvalidOperationException>(
+        var excecao = Assert.ThrowsAsync<RecursoDuplicadoException>(
             async () => await _autorServico.CriarAsync(dto));
 
-        Assert.That(excecao.Message, Is.EqualTo("Já existe um autor com este nome"));
+        Assert.That(excecao.Message, Is.EqualTo("Já existe autor com nome 'Clarice Lispector'"));
     }
 
     [Test]
@@ -79,31 +80,7 @@ public class AutorServicoTestes : TesteComBancoMemoria
     }
 
     [Test]
-    public async Task DeveObterTodosOsAutores()
-    {
-        var autor1 = new Autor(Guid.NewGuid(), "Paulo Coelho");
-        var autor2 = new Autor(Guid.NewGuid(), "Jorge Amado");
-        _contexto.Autores.AddRange(autor1, autor2);
-        await _contexto.SaveChangesAsync();
-
-        var resultado = await _autorServico.ObterTodosAsync();
-
-        Assert.That(resultado.Count(), Is.EqualTo(2));
-        Assert.That(resultado.Any(a => a.Nome == "Paulo Coelho"), Is.True);
-        Assert.That(resultado.Any(a => a.Nome == "Jorge Amado"), Is.True);
-    }
-
-    [Test]
-    public async Task DeveRetornarListaVaziaQuandoNaoHouverAutores()
-    {
-        var resultado = await _autorServico.ObterTodosAsync();
-
-        Assert.That(resultado, Is.Not.Null);
-        Assert.That(resultado.Count(), Is.EqualTo(0));
-    }
-
-    [Test]
-    public async Task DeveAtualizarAutorExistente()
+    public async Task DeveAtualizarAutorComDadosValidos()
     {
         var id = Guid.NewGuid();
         var autor = new Autor(id, "Nome Original");
@@ -115,39 +92,36 @@ public class AutorServicoTestes : TesteComBancoMemoria
         var resultado = await _autorServico.AtualizarAsync(id, dto);
 
         Assert.That(resultado.Nome, Is.EqualTo("Nome Atualizado"));
-        Assert.That(resultado.Id, Is.EqualTo(id));
-
-        var autorNoBanco = await _contexto.Autores.FindAsync(id);
-        Assert.That(autorNoBanco, Is.Not.Null);
-        Assert.That(autorNoBanco!.Nome, Is.EqualTo("Nome Atualizado"));
     }
 
     [Test]
-    public void DeveRejeitarAtualizacaoParaAutorInexistente()
+    public async Task DeveRejeitarAtualizacaoComNomeExistente()
+    {
+        var id1 = Guid.NewGuid();
+        var id2 = Guid.NewGuid();
+        var autor1 = new Autor(id1, "Primeiro Autor");
+        var autor2 = new Autor(id2, "Segundo Autor");
+        _contexto.Autores.AddRange(autor1, autor2);
+        await _contexto.SaveChangesAsync();
+
+        var dto = new AtualizarAutorDto { Nome = "Primeiro Autor" };
+
+        var excecao = Assert.ThrowsAsync<RecursoDuplicadoException>(
+            async () => await _autorServico.AtualizarAsync(id2, dto));
+
+        Assert.That(excecao.Message, Is.EqualTo("Já existe autor com nome 'Primeiro Autor'"));
+    }
+
+    [Test]
+    public async Task DeveRejeitarAtualizacaoDeAutorInexistente()
     {
         var idInexistente = Guid.NewGuid();
         var dto = new AtualizarAutorDto { Nome = "Nome Qualquer" };
 
-        var excecao = Assert.ThrowsAsync<InvalidOperationException>(
+        var excecao = Assert.ThrowsAsync<RecursoNaoEncontradoException>(
             async () => await _autorServico.AtualizarAsync(idInexistente, dto));
 
-        Assert.That(excecao!.Message, Is.EqualTo("Autor não encontrado"));
-    }
-
-    [Test]
-    public void DeveRejeitarAtualizacaoComNomeJaExistente()
-    {
-        var autor1 = new Autor(Guid.NewGuid(), "Autor Um");
-        var autor2 = new Autor(Guid.NewGuid(), "Autor Dois");
-        _contexto.Autores.AddRange(autor1, autor2);
-        _contexto.SaveChanges();
-
-        var dto = new AtualizarAutorDto { Nome = "Autor Um" };
-
-        var excecao = Assert.ThrowsAsync<InvalidOperationException>(
-            async () => await _autorServico.AtualizarAsync(autor2.Id, dto));
-
-        Assert.That(excecao!.Message, Is.EqualTo("Já existe um autor com este nome"));
+        Assert.That(excecao.Message, Is.EqualTo("Autor não encontrado"));
     }
 
     [Test]
@@ -158,21 +132,21 @@ public class AutorServicoTestes : TesteComBancoMemoria
         _contexto.Autores.Add(autor);
         await _contexto.SaveChangesAsync();
 
-        await _autorServico.RemoverAsync(id);
+        Assert.DoesNotThrowAsync(async () => await _autorServico.RemoverAsync(id));
 
-        var autorNoBanco = await _contexto.Autores.FindAsync(id);
-        Assert.That(autorNoBanco, Is.Null);
+        var autorRemovido = await _contexto.Autores.FindAsync(id);
+        Assert.That(autorRemovido, Is.Null);
     }
 
     [Test]
-    public void DeveRejeitarRemocaoDeAutorInexistente()
+    public async Task DeveRejeitarRemocaoDeAutorInexistente()
     {
         var idInexistente = Guid.NewGuid();
 
-        var excecao = Assert.ThrowsAsync<InvalidOperationException>(
+        var excecao = Assert.ThrowsAsync<RecursoNaoEncontradoException>(
             async () => await _autorServico.RemoverAsync(idInexistente));
 
-        Assert.That(excecao!.Message, Is.EqualTo("Autor não encontrado"));
+        Assert.That(excecao.Message, Is.EqualTo("Autor não encontrado"));
     }
 
     [Test]

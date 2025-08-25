@@ -1,14 +1,15 @@
-<Project Sdk="Microsoft.NET.Sdk.Web">
+﻿<Project Sdk="Microsoft.NET.Sdk.Web">
 
     <PropertyGroup>
         <TargetFramework>net9.0</TargetFramework>
         <Nullable>enable</Nullable>
         <ImplicitUsings>enable</ImplicitUsings>
         <DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
-    </PropertyGroup>
+      <UserSecretsId>15dc9486-3822-416c-ac9d-d313057d9957</UserSecretsId>
+  </PropertyGroup>
 
     <ItemGroup>
-        <PackageReference Include="Swashbuckle.AspNetCore" Version="6.8.1"/>
+        <PackageReference Include="Swashbuckle.AspNetCore" Version="6.8.1" />
         <PackageReference Include="Microsoft.EntityFrameworkCore.Tools" Version="9.0.0" />
     </ItemGroup>
 

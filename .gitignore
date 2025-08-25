@@ -508,3 +508,62 @@ healthchecksdb*
 # Swagger generated files
 swagger.json
 swagger.yaml
+
+# Arquivo gerado pelo Git e pelo Sistema Operacional
+.DS_Store
+Thumbs.db
+ehthumbs.db
+desktop.ini
+
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+lerna-debug.log*
+
+# Diretórios de dependências (essencial)
+node_modules/
+
+# Arquivos de build e output (Vite e Angular)
+dist/
+out/
+.out/
+.next/
+.nuxt/
+
+# Diretórios de cache
+.cache/
+.parcel-cache/
+.vite/
+.angular/
+
+# Arquivos de ambiente (NÃO FAÇA COMMIT DE SENHAS OU CHAVES DE API)
+.env
+.env.local
+.env.*.local
+# Você pode fazer commit de um arquivo de exemplo, se quiser
+! .env.example
+
+# Configurações do editor (Visual Studio Code)
+# Ignora configurações pessoais, mas permite compartilhar configurações do projeto
+.vscode/*
+! .vscode/extensions.json
+! .vscode/settings.json
+! .vscode/launch.json
+
+# Relatórios de testes e cobertura de código
+coverage/
+.nyc_output/
+*.lcov
+
+# Arquivos temporários e de pacotes
+*.tgz
+tmp/
+temp/
+
+# Arquivos de banco de dados local
+*.db
+*.sqlite
+*.sqlite3

@@ -1,8 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using Servico.Dtos;
 using Servico.Interfaces;
-using ApiLivros.ViewModels;
-using ApiLivros.Extensions;
 
 namespace ApiLivros.Controllers;
 
@@ -18,82 +16,56 @@ public class LivrosControlador : ControllerBase
     }
 
     [HttpPost]
-    public async Task<ActionResult<LivroViewModel>> CriarAsync([FromBody] CriarLivroDto dto)
+    public async Task<ActionResult<LivroDto>> CriarAsync([FromBody] CriarLivroDto dto)
     {
-        if (!ModelState.IsValid)
-            return BadRequest(ModelState);
-
         var livroDto = await _livroServico.CriarAsync(dto);
-        var viewModel = livroDto.ParaViewModel();
-        
-        return Created($"api/v1/livros/{viewModel.Id}", viewModel);
+        return Created($"api/v1/livros/{livroDto.Id}", livroDto);
     }
 
     [HttpGet("{id:guid}")]
-    public async Task<ActionResult<LivroViewModel>> ObterPorIdAsync(Guid id)
+    public async Task<ActionResult<LivroDto>> ObterPorIdAsync(Guid id)
     {
-        if (id == Guid.Empty)
-            return BadRequest(new { mensagem = "ID inválido" });
-
         var livroDto = await _livroServico.ObterPorIdAsync(id);
         
         if (livroDto == null)
-            return NotFound(new { mensagem = "Livro não encontrado" });
+            return NotFound();
 
-        return Ok(livroDto.ParaViewModel());
+        return Ok(livroDto);
     }
 
     [HttpGet]
-    public async Task<ActionResult<IEnumerable<LivroViewModel>>> ObterTodosAsync()
+    public async Task<ActionResult<IEnumerable<LivroDto>>> ObterTodosAsync()
     {
         var livrosDto = await _livroServico.ObterTodosAsync();
-        var viewModels = livrosDto.Select(dto => dto.ParaViewModel());
-        return Ok(viewModels);
+        return Ok(livrosDto);
     }
 
     [HttpGet("autor/{autorId:guid}")]
-    public async Task<ActionResult<IEnumerable<LivroViewModel>>> ObterPorAutorAsync(Guid autorId)
+    public async Task<ActionResult<IEnumerable<LivroDto>>> ObterPorAutorAsync(Guid autorId)
     {
-        if (autorId == Guid.Empty)
-            return BadRequest(new { mensagem = "ID do autor inválido" });
-
         var livrosDto = await _livroServico.ObterPorAutorAsync(autorId);
-        var viewModels = livrosDto.Select(dto => dto.ParaViewModel());
-        return Ok(viewModels);
+        return Ok(livrosDto);
     }
 
     [HttpGet("genero/{generoId:guid}")]
-    public async Task<ActionResult<IEnumerable<LivroViewModel>>> ObterPorGeneroAsync(Guid generoId)
+    public async Task<ActionResult<IEnumerable<LivroDto>>> ObterPorGeneroAsync(Guid generoId)
     {
-        if (generoId == Guid.Empty)
-            return BadRequest(new { mensagem = "ID do gênero inválido" });
-
         var livrosDto = await _livroServico.ObterPorGeneroAsync(generoId);
-        var viewModels = livrosDto.Select(dto => dto.ParaViewModel());
-        return Ok(viewModels);
+        return Ok(livrosDto);
     }
 
     [HttpPut("{id:guid}")]
-    public async Task<ActionResult<LivroViewModel>> AtualizarAsync(Guid id, [FromBody] AtualizarLivroDto dto)
+    public async Task<ActionResult<LivroDto>> AtualizarAsync(Guid id, [FromBody] AtualizarLivroDto dto)
     {
-        if (!ModelState.IsValid)
-            return BadRequest(ModelState);
-
-        if (id == Guid.Empty)
-            return BadRequest(new { mensagem = "ID inválido" });
-
         var livroDto = await _livroServico.AtualizarAsync(id, dto);
-        return Ok(livroDto.ParaViewModel());
+        return Ok(livroDto);
     }
 
     [HttpDelete("{id:guid}")]
     public async Task<ActionResult> RemoverAsync(Guid id)
     {
-        if (id == Guid.Empty)
-            return BadRequest(new { mensagem = "ID inválido" });
-
         if (!await _livroServico.ExisteAsync(id))
-            return NotFound(new { mensagem = "Livro não encontrado" });
+            return NotFound();
 
         await _livroServico.RemoverAsync(id);
         return NoContent();

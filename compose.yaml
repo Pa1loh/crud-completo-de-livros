@@ -1,7 +1,9 @@
-﻿services:
+﻿version: '3.8'
+
+services:
   postgres:
-    image: postgres:16
-    container_name: postgres_livros
+    image: postgres:15
+    container_name: livros-postgres
     environment:
       POSTGRES_DB: livros_dev
       POSTGRES_USER: postgres
@@ -10,22 +12,51 @@
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
+    networks:
+      - livros-network
+    restart: unless-stopped
 
-  apilivros:
-    image: apilivros
+  backend:
     build:
       context: .
       dockerfile: ApiLivros/Dockerfile
-    depends_on:
-      postgres:
-        condition: service_healthy
+    container_name: livros-backend
     environment:
+      - ASPNETCORE_ENVIRONMENT=Development
       - ConnectionStrings__DefaultConnection=Host=postgres;Database=livros_dev;Username=postgres;Password=postgres;Port=5432
+    ports:
+      - "7239:8080"
+    depends_on:
+      - postgres
+    networks:
+      - livros-network
+    restart: unless-stopped
+    volumes:
+      - ./ApiLivros:/app
+    command: ["dotnet", "watch", "run", "--urls", "http://0.0.0.0:8080"]
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: livros-frontend
+    ports:
+      - "4200:4200"
+    depends_on:
+      - backend
+    networks:
+      - livros-network
+    restart: unless-stopped
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    environment:
+      - NODE_ENV=development
+    command: ["npm", "start"]
 
 volumes:
   postgres_data:
+
+networks:
+  livros-network:
+    driver: bridge

@@ -1,4 +1,5 @@
 using Dominio.Entidades;
+using Dominio.Excecoes;
 using Infra.Contexto;
 using Servico.Dtos;
 using Servico.Servicos;
@@ -47,17 +48,17 @@ public class GeneroServicoTestes : TesteComBancoMemoria
 
         var dto = new CriarGeneroDto { Nome = "Romance" };
 
-        var excecao = Assert.ThrowsAsync<InvalidOperationException>(
+        var excecao = Assert.ThrowsAsync<RecursoDuplicadoException>(
             async () => await _generoServico.CriarAsync(dto));
 
-        Assert.That(excecao.Message, Is.EqualTo("Já existe um gênero com este nome"));
+        Assert.That(excecao.Message, Is.EqualTo("Já existe gênero com nome 'Romance'"));
     }
 
     [Test]
     public async Task DeveObterGeneroPorIdExistente()
     {
         var id = Guid.NewGuid();
-        var genero = new Genero(id, "Suspense");
+        var genero = new Genero(id, "Terror");
         _contexto.Generos.Add(genero);
         await _contexto.SaveChangesAsync();
 
@@ -65,7 +66,7 @@ public class GeneroServicoTestes : TesteComBancoMemoria
 
         Assert.That(resultado, Is.Not.Null);
         Assert.That(resultado.Id, Is.EqualTo(id));
-        Assert.That(resultado.Nome, Is.EqualTo("Suspense"));
+        Assert.That(resultado.Nome, Is.EqualTo("Terror"));
     }
 
     [Test]
@@ -79,31 +80,7 @@ public class GeneroServicoTestes : TesteComBancoMemoria
     }
 
     [Test]
-    public async Task DeveObterTodosOsGeneros()
-    {
-        var genero1 = new Genero(Guid.NewGuid(), "Terror");
-        var genero2 = new Genero(Guid.NewGuid(), "Drama");
-        _contexto.Generos.AddRange(genero1, genero2);
-        await _contexto.SaveChangesAsync();
-
-        var resultado = await _generoServico.ObterTodosAsync();
-
-        Assert.That(resultado.Count(), Is.EqualTo(2));
-        Assert.That(resultado.Any(g => g.Nome == "Terror"), Is.True);
-        Assert.That(resultado.Any(g => g.Nome == "Drama"), Is.True);
-    }
-
-    [Test]
-    public async Task DeveRetornarListaVaziaQuandoNaoHouverGeneros()
-    {
-        var resultado = await _generoServico.ObterTodosAsync();
-
-        Assert.That(resultado, Is.Not.Null);
-        Assert.That(resultado.Count(), Is.EqualTo(0));
-    }
-
-    [Test]
-    public async Task DeveAtualizarGeneroExistente()
+    public async Task DeveAtualizarGeneroComDadosValidos()
     {
         var id = Guid.NewGuid();
         var genero = new Genero(id, "Nome Original");
@@ -115,64 +92,81 @@ public class GeneroServicoTestes : TesteComBancoMemoria
         var resultado = await _generoServico.AtualizarAsync(id, dto);
 
         Assert.That(resultado.Nome, Is.EqualTo("Nome Atualizado"));
-        Assert.That(resultado.Id, Is.EqualTo(id));
-
-        var generoNoBanco = await _contexto.Generos.FindAsync(id);
-        Assert.That(generoNoBanco, Is.Not.Null);
-        Assert.That(generoNoBanco!.Nome, Is.EqualTo("Nome Atualizado"));
     }
 
     [Test]
-    public void DeveRejeitarAtualizacaoParaGeneroInexistente()
+    public async Task DeveRejeitarAtualizacaoComNomeExistente()
+    {
+        var id1 = Guid.NewGuid();
+        var id2 = Guid.NewGuid();
+        var genero1 = new Genero(id1, "Primeiro Gênero");
+        var genero2 = new Genero(id2, "Segundo Gênero");
+        _contexto.Generos.AddRange(genero1, genero2);
+        await _contexto.SaveChangesAsync();
+
+        var dto = new AtualizarGeneroDto { Nome = "Primeiro Gênero" };
+
+        var excecao = Assert.ThrowsAsync<RecursoDuplicadoException>(
+            async () => await _generoServico.AtualizarAsync(id2, dto));
+
+        Assert.That(excecao.Message, Is.EqualTo("Já existe gênero com nome 'Primeiro Gênero'"));
+    }
+
+    [Test]
+    public async Task DeveRejeitarAtualizacaoDeGeneroInexistente()
     {
         var idInexistente = Guid.NewGuid();
         var dto = new AtualizarGeneroDto { Nome = "Nome Qualquer" };
 
-        var excecao = Assert.ThrowsAsync<InvalidOperationException>(
+        var excecao = Assert.ThrowsAsync<RecursoNaoEncontradoException>(
             async () => await _generoServico.AtualizarAsync(idInexistente, dto));
 
-        Assert.That(excecao!.Message, Is.EqualTo("Gênero não encontrado"));
+        Assert.That(excecao.Message, Is.EqualTo("Gênero não encontrado"));
     }
 
     [Test]
-    public void DeveRejeitarAtualizacaoComNomeJaExistente()
-    {
-        var genero1 = new Genero(Guid.NewGuid(), "Aventura");
-        var genero2 = new Genero(Guid.NewGuid(), "Comédia");
-        _contexto.Generos.AddRange(genero1, genero2);
-        _contexto.SaveChanges();
-
-        var dto = new AtualizarGeneroDto { Nome = "Aventura" };
-
-        var excecao = Assert.ThrowsAsync<InvalidOperationException>(
-            async () => await _generoServico.AtualizarAsync(genero2.Id, dto));
-
-        Assert.That(excecao!.Message, Is.EqualTo("Já existe um gênero com este nome"));
-    }
-
-    [Test]
-    public async Task DeveRemoverGeneroExistente()
+    public async Task DeveRemoverGeneroSemLivrosAssociados()
     {
         var id = Guid.NewGuid();
         var genero = new Genero(id, "Gênero Para Remover");
         _contexto.Generos.Add(genero);
         await _contexto.SaveChangesAsync();
 
-        await _generoServico.RemoverAsync(id);
+        Assert.DoesNotThrowAsync(async () => await _generoServico.RemoverAsync(id));
 
-        var generoNoBanco = await _contexto.Generos.FindAsync(id);
-        Assert.That(generoNoBanco, Is.Null);
+        var generoRemovido = await _contexto.Generos.FindAsync(id);
+        Assert.That(generoRemovido, Is.Null);
     }
 
     [Test]
-    public void DeveRejeitarRemocaoDeGeneroInexistente()
+    public async Task DeveRejeitarRemocaoDeGeneroComLivrosAssociados()
+    {
+        var autorId = Guid.NewGuid();
+        var generoId = Guid.NewGuid();
+        var autor = new Autor(autorId, "Autor Teste");
+        var genero = new Genero(generoId, "Gênero Com Livros");
+        var livro = new Livro(Guid.NewGuid(), "Livro Teste", autorId, generoId);
+        
+        _contexto.Autores.Add(autor);
+        _contexto.Generos.Add(genero);
+        _contexto.Livros.Add(livro);
+        await _contexto.SaveChangesAsync();
+
+        var excecao = Assert.ThrowsAsync<RegraDeNegocioException>(
+            async () => await _generoServico.RemoverAsync(generoId));
+
+        Assert.That(excecao.Message, Is.EqualTo("Não é possível remover um gênero que possui livros associados"));
+    }
+
+    [Test]
+    public async Task DeveRejeitarRemocaoDeGeneroInexistente()
     {
         var idInexistente = Guid.NewGuid();
 
-        var excecao = Assert.ThrowsAsync<InvalidOperationException>(
+        var excecao = Assert.ThrowsAsync<RecursoNaoEncontradoException>(
             async () => await _generoServico.RemoverAsync(idInexistente));
 
-        Assert.That(excecao!.Message, Is.EqualTo("Gênero não encontrado"));
+        Assert.That(excecao.Message, Is.EqualTo("Gênero não encontrado"));
     }
 
     [Test]

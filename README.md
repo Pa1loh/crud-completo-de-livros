@@ -1,139 +1,75 @@
-# API de Livros
+API de Livros 
+📋 Índice
+Pré-requisitos
 
-API REST para gerenciamento de livros, autores e gêneros desenvolvida em .NET 9 seguindo princípios SOLID e Clean Architecture.
+Como Executar a Aplicação
 
-## 🚀 Tecnologias Utilizadas
+Opção 1: Com Docker (Recomendado)
 
-- **.NET 9** - Framework principal
-- **Entity Framework Core** - ORM para acesso a dados
-- **PostgreSQL** - Banco de dados
-- **Swagger/OpenAPI** - Documentação da API
-- **NUnit** - Framework de testes
-- **Entity Framework In-Memory** - Testes unitários
-- **Docker & Docker Compose** - Containerização
+Opção 2: Configuração Manual
 
-## 📁 Arquitetura
+Segurança: Variáveis de Ambiente e User Secrets
 
-O projeto segue os princípios da **Clean Architecture** com separação clara de responsabilidades:
+Endpoints da API (Swagger)
 
-```
-📦 ApiLivros/
-├── ApiLivros/          # Camada de Apresentação (Controllers, ViewModels, Middleware)
-├── Dominio/            # Camada de Domínio (Entidades, Regras de Negócio)
-├── Servico/            # Camada de Aplicação (Casos de Uso, DTOs, Interfaces)
-├── Infraestrutura/     # Camada de Infraestrutura (Repositórios, Contexto, Migrations)
-└──  Teste/              # Testes Unitários
-```
+Arquitetura e Tecnologias
 
-### ✅ **Requisitos Técnicos**
-- **Responsabilidade Única**: Cada classe tem uma única responsabilidade
-- **Injeção de Dependência**: Configurada via construtor
-- **Versionamento da API**: Rotas versionadas (`api/v1/`)
-- **Documentação Swagger**: Configurada com informações completas
-- **HTTP Status Codes**: Respostas padronizadas
-- **Environments**: Configurações para Development/Production
-- **DTOs**: Separação clara entre camadas
-- **ViewModels**: Apresentação desacoplada dos DTOs
-- **Entidades**: Domain-driven design
-- **ORM**: Entity Framework Core
-- **Migrations**: Controle de versão do banco
+Testes
 
-## Como Executar
+Como Contribuir
 
-### Pré-requisitos
-- .NET 9 SDK
-- Docker e Docker Compose
-- PostgreSQL (ou usar o container)
+🔧 Pré-requisitos
+Antes de começar, garanta que você tenha as ferramentas necessárias para a abordagem escolhida.
 
-### **Clonar o repositório**
-```bash
-git clone <url-do-repositorio>
-cd ApiLivros
-```
+Para Execução com Docker
+Docker e Docker Compose
 
-### **Executar com Docker Compose**
-```bash
-# Subir a aplicação e banco de dados
-docker-compose up -d
+Para Execução Manual
+.NET 9 SDK
 
-# A API estará disponível em: http://localhost:8080
-# Swagger UI: http://localhost:8080/swagger
-```
+Node.js v18+ e npm
 
-### **Executar localmente**
-```bash
-# Restaurar dependências
-dotnet restore
+PostgreSQL (ou Docker para rodar o contêiner do banco)
 
-# Executar migrations
-dotnet ef database update --project Infraestrutura
+🚀 Como Executar a Aplicação
+Opção 1: Execução Rápida com Docker (Recomendado)
+Esta é a forma mais simples e rápida de ter todo o ambiente rodando.
 
-# Executar a aplicação
-dotnet run --project ApiLivros
-```
+1. Clone o repositório
+   Bash
 
-## Endpoints da API
+git clone https://github.com/seu-usuario/seu-repositorio.git
+cd seu-repositorio
+2. Crie o arquivo de ambiente (Opcional, mas recomendado)
+   Por segurança, as credenciais do banco não ficam no código. Crie um arquivo chamado .env na raiz do projeto.
 
-### **Livros** (`/api/v1/livros`)
-```http
-GET    /api/v1/livros              # Listar todos os livros
-GET    /api/v1/livros/{id}         # Obter livro por ID
-GET    /api/v1/livros/autor/{id}   # Listar livros por autor
-GET    /api/v1/livros/genero/{id}  # Listar livros por gênero
-POST   /api/v1/livros              # Criar novo livro
-PUT    /api/v1/livros/{id}         # Atualizar livro
-DELETE /api/v1/livros/{id}         # Excluir livro
-```
+<details>
+<summary><strong>🔒 Clique para ver o aviso sobre o arquivo .env</strong></summary>
 
-### **Autores** (`/api/v1/autores`)
-```http
-GET    /api/v1/autores             # Listar todos os autores
-GET    /api/v1/autores/{id}        # Obter autor por ID
-POST   /api/v1/autores             # Criar novo autor
-PUT    /api/v1/autores/{id}        # Atualizar autor
-DELETE /api/v1/autores/{id}        # Excluir autor
-```
+Importante: O arquivo .env armazena dados sensíveis, como senhas de banco de dados. Ele nunca deve ser enviado para o repositório do Git. Certifique-se de que o nome .env está no seu arquivo .gitignore. Usar este arquivo evita expor suas credenciais diretamente no docker-compose.yaml.
 
-### **Gêneros** (`/api/v1/generos`)
-```http
-GET    /api/v1/generos             # Listar todos os gêneros
-GET    /api/v1/generos/{id}        # Obter gênero por ID
-POST   /api/v1/generos             # Criar novo gênero
-PUT    /api/v1/generos/{id}        # Atualizar gênero
-DELETE /api/v1/generos/{id}        # Excluir gênero
-```
+</details>
 
-## 🐳 Docker
+Copie o conteúdo abaixo para o seu arquivo .env:
 
-### Dockerfile
-A aplicação possui Dockerfile otimizado com multi-stage build.
+Bash
 
-### Docker Compose
-Configuração completa com API e banco PostgreSQL:
+# Arquivo .env
+DB_HOST=postgres
+DB_PORT=5432
+DB_NAME=livros_dev
+DB_USER=postgres
+DB_PASSWORD=postgres # Troque por uma senha forte se desejar
+API_PORT=7239
+FRONTEND_PORT=4200
+3. Execute com Docker Compose
+   Bash
 
-```bash
-# Subir os serviços
-docker-compose up -d
+docker-compose up -d --build
+Pronto! A aplicação estará disponível nos seguintes endereços:
 
-# Ver logs
-docker-compose logs -f
+🌐 Frontend (Angular): http://localhost:4200
 
-# Parar os serviços
-docker-compose down
-```
+⚙️ Backend API (.NET): http://localhost:7239
 
-## 🔧 Configurações
-
-### appsettings.json
-```json
-{
-  "ConnectionStrings": {
-    "DefaultConnection": "Host=localhost;Database=ApiLivros;Username=postgres;Password=postgres"
-  },
-  "Logging": {
-    "LogLevel": {
-      "Default": "Information"
-    }
-  }
-}
-```
+📖 Documentação Swagger: http://localhost:7239/swagger

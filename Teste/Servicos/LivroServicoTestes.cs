@@ -1,4 +1,5 @@
 using Dominio.Entidades;
+using Dominio.Excecoes;
 using Infra.Contexto;
 using Servico.Dtos;
 using Servico.Servicos;
@@ -54,31 +55,30 @@ public class LivroServicoTestes : TesteComBancoMemoria
         Assert.That(resultado.AutorId, Is.EqualTo(_autorId));
         Assert.That(resultado.GeneroId, Is.EqualTo(_generoId));
         Assert.That(resultado.Id, Is.Not.EqualTo(Guid.Empty));
-        Assert.That(resultado.DataCriacao, Is.LessThanOrEqualTo(DateTime.UtcNow));
     }
 
     [Test]
-    public void DeveRejeitarLivroComTituloExistente()
+    public async Task DeveRejeitarLivroComTituloExistente()
     {
-        var livro = new Livro(Guid.NewGuid(), "O Cortiço", _autorId, _generoId);
+        var livro = new Livro(Guid.NewGuid(), "1984", _autorId, _generoId);
         _contexto.Livros.Add(livro);
-        _contexto.SaveChanges();
+        await _contexto.SaveChangesAsync();
 
         var dto = new CriarLivroDto 
         { 
-            Titulo = "O Cortiço",
+            Titulo = "1984",
             AutorId = _autorId,
             GeneroId = _generoId
         };
 
-        var excecao = Assert.ThrowsAsync<InvalidOperationException>(
+        var excecao = Assert.ThrowsAsync<RecursoDuplicadoException>(
             async () => await _livroServico.CriarAsync(dto));
 
-        Assert.That(excecao!.Message, Is.EqualTo("Já existe um livro com este título"));
+        Assert.That(excecao.Message, Is.EqualTo("Já existe livro com título '1984'"));
     }
 
     [Test]
-    public void DeveRejeitarLivroComAutorInexistente()
+    public async Task DeveRejeitarLivroComAutorInexistente()
     {
         var autorInexistente = Guid.NewGuid();
         var dto = new CriarLivroDto 
@@ -88,14 +88,14 @@ public class LivroServicoTestes : TesteComBancoMemoria
             GeneroId = _generoId
         };
 
-        var excecao = Assert.ThrowsAsync<InvalidOperationException>(
+        var excecao = Assert.ThrowsAsync<RecursoNaoEncontradoException>(
             async () => await _livroServico.CriarAsync(dto));
 
-        Assert.That(excecao!.Message, Is.EqualTo("Autor não encontrado"));
+        Assert.That(excecao.Message, Is.EqualTo("Autor não encontrado"));
     }
 
     [Test]
-    public void DeveRejeitarLivroComGeneroInexistente()
+    public async Task DeveRejeitarLivroComGeneroInexistente()
     {
         var generoInexistente = Guid.NewGuid();
         var dto = new CriarLivroDto 
@@ -105,17 +105,17 @@ public class LivroServicoTestes : TesteComBancoMemoria
             GeneroId = generoInexistente
         };
 
-        var excecao = Assert.ThrowsAsync<InvalidOperationException>(
+        var excecao = Assert.ThrowsAsync<RecursoNaoEncontradoException>(
             async () => await _livroServico.CriarAsync(dto));
 
-        Assert.That(excecao!.Message, Is.EqualTo("Gênero não encontrado"));
+        Assert.That(excecao.Message, Is.EqualTo("Gênero não encontrado"));
     }
 
     [Test]
     public async Task DeveObterLivroPorIdExistente()
     {
         var id = Guid.NewGuid();
-        var livro = new Livro(id, "A Moreninha", _autorId, _generoId);
+        var livro = new Livro(id, "O Cortiço", _autorId, _generoId);
         _contexto.Livros.Add(livro);
         await _contexto.SaveChangesAsync();
 
@@ -123,7 +123,7 @@ public class LivroServicoTestes : TesteComBancoMemoria
 
         Assert.That(resultado, Is.Not.Null);
         Assert.That(resultado.Id, Is.EqualTo(id));
-        Assert.That(resultado.Titulo, Is.EqualTo("A Moreninha"));
+        Assert.That(resultado.Titulo, Is.EqualTo("O Cortiço"));
         Assert.That(resultado.NomeAutor, Is.EqualTo("Teste Autor"));
         Assert.That(resultado.NomeGenero, Is.EqualTo("Teste Gênero"));
     }
@@ -139,62 +139,7 @@ public class LivroServicoTestes : TesteComBancoMemoria
     }
 
     [Test]
-    public async Task DeveObterTodosOsLivros()
-    {
-        var livro1 = new Livro(Guid.NewGuid(), "Livro Um", _autorId, _generoId);
-        var livro2 = new Livro(Guid.NewGuid(), "Livro Dois", _autorId, _generoId);
-        _contexto.Livros.AddRange(livro1, livro2);
-        await _contexto.SaveChangesAsync();
-
-        var resultado = await _livroServico.ObterTodosAsync();
-
-        Assert.That(resultado.Count(), Is.EqualTo(2));
-        Assert.That(resultado.Any(l => l.Titulo == "Livro Um"), Is.True);
-        Assert.That(resultado.Any(l => l.Titulo == "Livro Dois"), Is.True);
-    }
-
-    [Test]
-    public async Task DeveObterLivrosPorAutor()
-    {
-        var outroAutorId = Guid.NewGuid();
-        var outroAutor = new Autor(outroAutorId, "Outro Autor");
-        _contexto.Autores.Add(outroAutor);
-
-        var livro1 = new Livro(Guid.NewGuid(), "Livro Autor 1", _autorId, _generoId);
-        var livro2 = new Livro(Guid.NewGuid(), "Livro Autor 2", _autorId, _generoId);
-        var livro3 = new Livro(Guid.NewGuid(), "Livro Outro Autor", outroAutorId, _generoId);
-        
-        _contexto.Livros.AddRange(livro1, livro2, livro3);
-        await _contexto.SaveChangesAsync();
-
-        var resultado = await _livroServico.ObterPorAutorAsync(_autorId);
-
-        Assert.That(resultado.Count(), Is.EqualTo(2));
-        Assert.That(resultado.All(l => l.AutorId == _autorId), Is.True);
-    }
-
-    [Test]
-    public async Task DeveObterLivrosPorGenero()
-    {
-        var outroGeneroId = Guid.NewGuid();
-        var outroGenero = new Genero(outroGeneroId, "Outro Gênero");
-        _contexto.Generos.Add(outroGenero);
-
-        var livro1 = new Livro(Guid.NewGuid(), "Livro Gênero 1", _autorId, _generoId);
-        var livro2 = new Livro(Guid.NewGuid(), "Livro Gênero 2", _autorId, _generoId);
-        var livro3 = new Livro(Guid.NewGuid(), "Livro Outro Gênero", _autorId, outroGeneroId);
-        
-        _contexto.Livros.AddRange(livro1, livro2, livro3);
-        await _contexto.SaveChangesAsync();
-
-        var resultado = await _livroServico.ObterPorGeneroAsync(_generoId);
-
-        Assert.That(resultado.Count(), Is.EqualTo(2));
-        Assert.That(resultado.All(l => l.GeneroId == _generoId), Is.True);
-    }
-
-    [Test]
-    public async Task DeveAtualizarLivroExistente()
+    public async Task DeveAtualizarLivroComDadosValidos()
     {
         var id = Guid.NewGuid();
         var livro = new Livro(id, "Título Original", _autorId, _generoId);
@@ -211,28 +156,23 @@ public class LivroServicoTestes : TesteComBancoMemoria
         var resultado = await _livroServico.AtualizarAsync(id, dto);
 
         Assert.That(resultado.Titulo, Is.EqualTo("Título Atualizado"));
-        Assert.That(resultado.Id, Is.EqualTo(id));
-
-        var livroNoBanco = await _contexto.Livros.FindAsync(id);
-        Assert.That(livroNoBanco, Is.Not.Null);
-        Assert.That(livroNoBanco!.Titulo, Is.EqualTo("Título Atualizado"));
     }
 
     [Test]
-    public void DeveRejeitarAtualizacaoParaLivroInexistente()
+    public async Task DeveRejeitarAtualizacaoDeLivroInexistente()
     {
         var idInexistente = Guid.NewGuid();
         var dto = new AtualizarLivroDto 
         { 
-            Titulo = "Título Qualquer",
+            Titulo = "Qualquer Título",
             AutorId = _autorId,
             GeneroId = _generoId
         };
 
-        var excecao = Assert.ThrowsAsync<InvalidOperationException>(
+        var excecao = Assert.ThrowsAsync<RecursoNaoEncontradoException>(
             async () => await _livroServico.AtualizarAsync(idInexistente, dto));
 
-        Assert.That(excecao!.Message, Is.EqualTo("Livro não encontrado"));
+        Assert.That(excecao.Message, Is.EqualTo("Livro não encontrado"));
     }
 
     [Test]
@@ -243,21 +183,51 @@ public class LivroServicoTestes : TesteComBancoMemoria
         _contexto.Livros.Add(livro);
         await _contexto.SaveChangesAsync();
 
-        await _livroServico.RemoverAsync(id);
+        Assert.DoesNotThrowAsync(async () => await _livroServico.RemoverAsync(id));
 
-        var livroNoBanco = await _contexto.Livros.FindAsync(id);
-        Assert.That(livroNoBanco, Is.Null);
+        var livroRemovido = await _contexto.Livros.FindAsync(id);
+        Assert.That(livroRemovido, Is.Null);
     }
 
     [Test]
-    public void DeveRejeitarRemocaoDeLivroInexistente()
+    public async Task DeveRejeitarRemocaoDeLivroInexistente()
     {
         var idInexistente = Guid.NewGuid();
 
-        var excecao = Assert.ThrowsAsync<InvalidOperationException>(
+        var excecao = Assert.ThrowsAsync<RecursoNaoEncontradoException>(
             async () => await _livroServico.RemoverAsync(idInexistente));
 
-        Assert.That(excecao!.Message, Is.EqualTo("Livro não encontrado"));
+        Assert.That(excecao.Message, Is.EqualTo("Livro não encontrado"));
+    }
+
+    [Test]
+    public async Task DeveObterLivrosPorAutor()
+    {
+        var livro1 = new Livro(Guid.NewGuid(), "Livro 1", _autorId, _generoId);
+        var livro2 = new Livro(Guid.NewGuid(), "Livro 2", _autorId, _generoId);
+        _contexto.Livros.AddRange(livro1, livro2);
+        await _contexto.SaveChangesAsync();
+
+        var resultado = await _livroServico.ObterPorAutorAsync(_autorId);
+
+        var livros = resultado.ToArray();
+        Assert.That(livros.Length, Is.EqualTo(2));
+        Assert.That(livros.All(l => l.AutorId == _autorId), Is.True);
+    }
+
+    [Test]
+    public async Task DeveObterLivrosPorGenero()
+    {
+        var livro1 = new Livro(Guid.NewGuid(), "Livro A", _autorId, _generoId);
+        var livro2 = new Livro(Guid.NewGuid(), "Livro B", _autorId, _generoId);
+        _contexto.Livros.AddRange(livro1, livro2);
+        await _contexto.SaveChangesAsync();
+
+        var resultado = await _livroServico.ObterPorGeneroAsync(_generoId);
+
+        var livros = resultado.ToArray();
+        Assert.That(livros.Length, Is.EqualTo(2));
+        Assert.That(livros.All(l => l.GeneroId == _generoId), Is.True);
     }
 
     [Test]

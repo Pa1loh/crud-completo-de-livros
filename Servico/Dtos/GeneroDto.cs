@@ -2,18 +2,19 @@ using System.ComponentModel.DataAnnotations;
 
 namespace Servico.Dtos;
 
-public class CriarGeneroDto
+public abstract class GeneroBaseDto
 {
     [Required(ErrorMessage = "Nome é obrigatório")]
     [StringLength(50, ErrorMessage = "Nome deve ter no máximo 50 caracteres")]
     public string Nome { get; set; } = string.Empty;
 }
 
-public class AtualizarGeneroDto
+public class CriarGeneroDto : GeneroBaseDto
 {
-    [Required(ErrorMessage = "Nome é obrigatório")]
-    [StringLength(50, ErrorMessage = "Nome deve ter no máximo 50 caracteres")]
-    public string Nome { get; set; } = string.Empty;
+}
+
+public class AtualizarGeneroDto : GeneroBaseDto
+{
 }
 
 public class GeneroDto

@@ -1,4 +1,4 @@
-namespace ApiLivros.Models;
+namespace ApiLivros.Response;
 
 public class RespostaPadronizada<T>
 {
@@ -6,7 +6,6 @@ public class RespostaPadronizada<T>
     public string Mensagem { get; set; } = string.Empty;
     public T? Dados { get; set; }
     public List<string> Erros { get; set; } = new();
-    public DateTime Timestamp { get; set; } = DateTime.UtcNow;
 
     public static RespostaPadronizada<T> ComSucesso(T dados, string mensagem = "Operação realizada com sucesso")
     {

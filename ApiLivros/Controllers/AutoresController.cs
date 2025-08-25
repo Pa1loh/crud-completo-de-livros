@@ -1,8 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using Servico.Dtos;
 using Servico.Interfaces;
-using ApiLivros.ViewModels;
-using ApiLivros.Extensions;
 
 namespace ApiLivros.Controllers;
 
@@ -18,60 +16,42 @@ public class AutoresControlador : ControllerBase
     }
 
     [HttpPost]
-    public async Task<ActionResult<AutorViewModel>> CriarAsync([FromBody] CriarAutorDto dto)
+    public async Task<ActionResult<AutorDto>> CriarAsync([FromBody] CriarAutorDto dto)
     {
-        if (!ModelState.IsValid)
-            return BadRequest(ModelState);
-
         var autorDto = await _autorServico.CriarAsync(dto);
-        var viewModel = autorDto.ParaViewModel();
-        
-        return Created($"api/v1/autores/{viewModel.Id}", viewModel);
+        return Created($"api/v1/autores/{autorDto.Id}", autorDto);
     }
 
     [HttpGet("{id:guid}")]
-    public async Task<ActionResult<AutorViewModel>> ObterPorIdAsync(Guid id)
+    public async Task<ActionResult<AutorDto>> ObterPorIdAsync(Guid id)
     {
-        if (id == Guid.Empty)
-            return BadRequest(new { mensagem = "ID inválido" });
-
         var autorDto = await _autorServico.ObterPorIdAsync(id);
         
         if (autorDto == null)
-            return NotFound(new { mensagem = "Autor não encontrado" });
+            return NotFound();
 
-        return Ok(autorDto.ParaViewModel());
+        return Ok(autorDto);
     }
 
     [HttpGet]
-    public async Task<ActionResult<IEnumerable<AutorViewModel>>> ObterTodosAsync()
+    public async Task<ActionResult<IEnumerable<AutorDto>>> ObterTodosAsync()
     {
         var autoresDto = await _autorServico.ObterTodosAsync();
-        var viewModels = autoresDto.Select(dto => dto.ParaViewModel());
-        return Ok(viewModels);
+        return Ok(autoresDto);
     }
 
     [HttpPut("{id:guid}")]
-    public async Task<ActionResult<AutorViewModel>> AtualizarAsync(Guid id, [FromBody] AtualizarAutorDto dto)
+    public async Task<ActionResult<AutorDto>> AtualizarAsync(Guid id, [FromBody] AtualizarAutorDto dto)
     {
-        if (!ModelState.IsValid)
-            return BadRequest(ModelState);
-
-        if (id == Guid.Empty)
-            return BadRequest(new { mensagem = "ID inválido" });
-
         var autorDto = await _autorServico.AtualizarAsync(id, dto);
-        return Ok(autorDto.ParaViewModel());
+        return Ok(autorDto);
     }
 
     [HttpDelete("{id:guid}")]
     public async Task<ActionResult> RemoverAsync(Guid id)
     {
-        if (id == Guid.Empty)
-            return BadRequest(new { mensagem = "ID inválido" });
-
         if (!await _autorServico.ExisteAsync(id))
-            return NotFound(new { mensagem = "Autor não encontrado" });
+            return NotFound();
 
         await _autorServico.RemoverAsync(id);
         return NoContent();

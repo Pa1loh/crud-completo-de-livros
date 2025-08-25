@@ -2,7 +2,7 @@ using System.ComponentModel.DataAnnotations;
 
 namespace Servico.Dtos;
 
-public class CriarLivroDto
+public abstract class LivroBaseDto
 {
     [Required(ErrorMessage = "Título é obrigatório")]
     [StringLength(200, ErrorMessage = "Título deve ter no máximo 200 caracteres")]
@@ -15,17 +15,12 @@ public class CriarLivroDto
     public Guid GeneroId { get; set; }
 }
 
-public class AtualizarLivroDto
+public class CriarLivroDto : LivroBaseDto
 {
-    [Required(ErrorMessage = "Título é obrigatório")]
-    [StringLength(200, ErrorMessage = "Título deve ter no máximo 200 caracteres")]
-    public string Titulo { get; set; } = string.Empty;
-    
-    [Required(ErrorMessage = "AutorId é obrigatório")]
-    public Guid AutorId { get; set; }
-    
-    [Required(ErrorMessage = "GeneroId é obrigatório")]
-    public Guid GeneroId { get; set; }
+}
+
+public class AtualizarLivroDto : LivroBaseDto
+{
 }
 
 public class LivroDto

@@ -1,8 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using Servico.Dtos;
 using Servico.Interfaces;
-using ApiLivros.ViewModels;
-using ApiLivros.Extensions;
 
 namespace ApiLivros.Controllers;
 
@@ -18,60 +16,42 @@ public class GenerosControlador : ControllerBase
     }
 
     [HttpPost]
-    public async Task<ActionResult<GeneroViewModel>> CriarAsync([FromBody] CriarGeneroDto dto)
+    public async Task<ActionResult<GeneroDto>> CriarAsync([FromBody] CriarGeneroDto dto)
     {
-        if (!ModelState.IsValid)
-            return BadRequest(ModelState);
-
         var generoDto = await _generoServico.CriarAsync(dto);
-        var viewModel = generoDto.ParaViewModel();
-        
-        return Created($"api/v1/generos/{viewModel.Id}", viewModel);
+        return Created($"api/v1/generos/{generoDto.Id}", generoDto);
     }
 
     [HttpGet("{id:guid}")]
-    public async Task<ActionResult<GeneroViewModel>> ObterPorIdAsync(Guid id)
+    public async Task<ActionResult<GeneroDto>> ObterPorIdAsync(Guid id)
     {
-        if (id == Guid.Empty)
-            return BadRequest(new { mensagem = "ID inválido" });
-
         var generoDto = await _generoServico.ObterPorIdAsync(id);
         
         if (generoDto == null)
-            return NotFound(new { mensagem = "Gênero não encontrado" });
+            return NotFound();
 
-        return Ok(generoDto.ParaViewModel());
+        return Ok(generoDto);
     }
 
     [HttpGet]
-    public async Task<ActionResult<IEnumerable<GeneroViewModel>>> ObterTodosAsync()
+    public async Task<ActionResult<IEnumerable<GeneroDto>>> ObterTodosAsync()
     {
         var generosDto = await _generoServico.ObterTodosAsync();
-        var viewModels = generosDto.Select(dto => dto.ParaViewModel());
-        return Ok(viewModels);
+        return Ok(generosDto);
     }
 
     [HttpPut("{id:guid}")]
-    public async Task<ActionResult<GeneroViewModel>> AtualizarAsync(Guid id, [FromBody] AtualizarGeneroDto dto)
+    public async Task<ActionResult<GeneroDto>> AtualizarAsync(Guid id, [FromBody] AtualizarGeneroDto dto)
     {
-        if (!ModelState.IsValid)
-            return BadRequest(ModelState);
-
-        if (id == Guid.Empty)
-            return BadRequest(new { mensagem = "ID inválido" });
-
         var generoDto = await _generoServico.AtualizarAsync(id, dto);
-        return Ok(generoDto.ParaViewModel());
+        return Ok(generoDto);
     }
 
     [HttpDelete("{id:guid}")]
     public async Task<ActionResult> RemoverAsync(Guid id)
     {
-        if (id == Guid.Empty)
-            return BadRequest(new { mensagem = "ID inválido" });
-
         if (!await _generoServico.ExisteAsync(id))
-            return NotFound(new { mensagem = "Gênero não encontrado" });
+            return NotFound();
 
         await _generoServico.RemoverAsync(id);
         return NoContent();

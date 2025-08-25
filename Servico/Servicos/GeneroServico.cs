@@ -1,4 +1,5 @@
 using Dominio.Entidades;
+using Dominio.Excecoes;
 using Infra.Contexto;
 using Microsoft.EntityFrameworkCore;
 using Servico.Dtos;
@@ -18,7 +19,7 @@ public class GeneroServico : IGeneroServico
     public async Task<GeneroDto> CriarAsync(CriarGeneroDto dto)
     {
         if (await ExisteNomeAsync(dto.Nome))
-            throw new InvalidOperationException("Já existe um gênero com este nome");
+            throw new RecursoDuplicadoException("gênero", $"nome '{dto.Nome}'");
 
         var genero = new Genero(Guid.NewGuid(), dto.Nome);
 
@@ -53,10 +54,10 @@ public class GeneroServico : IGeneroServico
             .FirstOrDefaultAsync(g => g.Id == id);
 
         if (genero == null)
-            throw new InvalidOperationException("Gênero não encontrado");
+            throw new RecursoNaoEncontradoException("Gênero");
 
         if (await ExisteNomeAsync(dto.Nome, id))
-            throw new InvalidOperationException("Já existe um gênero com este nome");
+            throw new RecursoDuplicadoException("gênero", $"nome '{dto.Nome}'");
 
         genero.AlterarNome(dto.Nome);
         await _contexto.SaveChangesAsync();
@@ -70,14 +71,14 @@ public class GeneroServico : IGeneroServico
             .FirstOrDefaultAsync(g => g.Id == id);
 
         if (genero == null)
-            throw new InvalidOperationException("Gênero não encontrado");
+            throw new RecursoNaoEncontradoException("Gênero");
 
         var possuiLivros = await _contexto.Livros
             .AsNoTracking()
             .AnyAsync(l => l.GeneroId == id);
 
         if (possuiLivros)
-            throw new InvalidOperationException("Não é possível remover um gênero que possui livros associados");
+            throw new RegraDeNegocioException("Não é possível remover um gênero que possui livros associados");
 
         _contexto.Generos.Remove(genero);
         await _contexto.SaveChangesAsync();

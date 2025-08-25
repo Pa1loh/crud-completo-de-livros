@@ -1,12 +1,10 @@
-using Infra.Configuracao;
-using Servico.Configuracao;
+using ApiLivros.Configuracao;
 using ApiLivros.Middleware;
 
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddControllers();
-builder.Services.AdicionarInfraestrutura(builder.Configuration);
-builder.Services.AdicionarServicos();
+builder.Services.AdicionarDependencias(builder.Configuration);
 
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(opcoes =>
@@ -36,7 +34,7 @@ builder.Services.AddCors(opcoes =>
 
 var app = builder.Build();
 
-app.UseMiddleware<TratamentoGlobalErrosMiddleware>();
+app.UseMiddleware<TratamentoGlobalErros>();
 
 if (app.Environment.IsDevelopment())
 {

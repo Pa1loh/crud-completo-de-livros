@@ -1,4 +1,5 @@
 using Dominio.Entidades;
+using Dominio.Excecoes;
 using Infra.Contexto;
 using Microsoft.EntityFrameworkCore;
 using Servico.Dtos;
@@ -18,7 +19,7 @@ public class AutorServico : IAutorServico
     public async Task<AutorDto> CriarAsync(CriarAutorDto dto)
     {
         if (await ExisteNomeAsync(dto.Nome))
-            throw new InvalidOperationException("Já existe um autor com este nome");
+            throw new RecursoDuplicadoException("autor", $"nome '{dto.Nome}'");
 
         var autor = new Autor(Guid.NewGuid(), dto.Nome);
 
@@ -53,10 +54,10 @@ public class AutorServico : IAutorServico
             .FirstOrDefaultAsync(a => a.Id == id);
 
         if (autor == null)
-            throw new InvalidOperationException("Autor não encontrado");
+            throw new RecursoNaoEncontradoException("Autor");
 
         if (await ExisteNomeAsync(dto.Nome, id))
-            throw new InvalidOperationException("Já existe um autor com este nome");
+            throw new RecursoDuplicadoException("autor", $"nome '{dto.Nome}'");
 
         autor.AlterarNome(dto.Nome);
         await _contexto.SaveChangesAsync();
@@ -70,14 +71,7 @@ public class AutorServico : IAutorServico
             .FirstOrDefaultAsync(a => a.Id == id);
 
         if (autor == null)
-            throw new InvalidOperationException("Autor não encontrado");
-
-        var possuiLivros = await _contexto.Livros
-            .AsNoTracking()
-            .AnyAsync(l => l.AutorId == id);
-
-        if (possuiLivros)
-            throw new InvalidOperationException("Não é possível remover um autor que possui livros associados");
+            throw new RecursoNaoEncontradoException("Autor");
 
         _contexto.Autores.Remove(autor);
         await _contexto.SaveChangesAsync();

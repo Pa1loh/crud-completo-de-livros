@@ -1,23 +1,23 @@
-﻿FROM mcr.microsoft.com/dotnet/aspnet:9.0 AS base
-USER $APP_UID
-WORKDIR /app
-EXPOSE 8080
-EXPOSE 8081
+﻿FROM mcr.microsoft.com/dotnet/sdk:9.0 AS development
 
-FROM mcr.microsoft.com/dotnet/sdk:9.0 AS build
-ARG BUILD_CONFIGURATION=Release
-WORKDIR /src
-COPY ["ApiLivros/ApiLivros.csproj", "ApiLivros/"]
-RUN dotnet restore "ApiLivros/ApiLivros.csproj"
+WORKDIR /app
+
+COPY *.sln ./
+COPY ApiLivros/*.csproj ApiLivros/
+COPY Dominio/*.csproj Dominio/
+COPY Servico/*.csproj Servico/
+COPY Infraestrutura/*.csproj Infraestrutura/
+COPY Teste/*.csproj Teste/
+
+RUN dotnet restore ApiLivros/ApiLivros.csproj
+
 COPY . .
-WORKDIR "/src/ApiLivros"
-RUN dotnet build "./ApiLivros.csproj" -c $BUILD_CONFIGURATION -o /app/build
 
-FROM build AS publish
-ARG BUILD_CONFIGURATION=Release
-RUN dotnet publish "./ApiLivros.csproj" -c $BUILD_CONFIGURATION -o /app/publish /p:UseAppHost=false
+RUN dotnet tool install --global dotnet-ef
+ENV PATH="${PATH}:/root/.dotnet/tools"
 
-FROM base AS final
-WORKDIR /app
-COPY --from=publish /app/publish .
-ENTRYPOINT ["dotnet", "ApiLivros.dll"]
+EXPOSE 8080
+
+WORKDIR /app/ApiLivros
+
+CMD ["dotnet", "watch", "run", "--urls", "http://0.0.0.0:8080"]

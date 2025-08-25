@@ -2,18 +2,19 @@ using System.ComponentModel.DataAnnotations;
 
 namespace Servico.Dtos;
 
-public class CriarAutorDto
+public abstract class AutorBaseDto
 {
     [Required(ErrorMessage = "Nome é obrigatório")]
     [StringLength(100, ErrorMessage = "Nome deve ter no máximo 100 caracteres")]
     public string Nome { get; set; } = string.Empty;
 }
 
-public class AtualizarAutorDto
+public class CriarAutorDto : AutorBaseDto
 {
-    [Required(ErrorMessage = "Nome é obrigatório")]
-    [StringLength(100, ErrorMessage = "Nome deve ter no máximo 100 caracteres")]
-    public string Nome { get; set; } = string.Empty;
+}
+
+public class AtualizarAutorDto : AutorBaseDto
+{
 }
 
 public class AutorDto
