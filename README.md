@@ -152,6 +152,9 @@ Testes automatizados da aplicação:
 - Respostas padronizadas para o frontend
 - Logs estruturados
 
+### Sem repository pattner
+- Como o projeto e pequeno e para nao ter redundancia com o entity framework, decidi optar por chamar o contexto direto na service
+
 ## Frontend
 
 **Localização:** `/frontend`
