@@ -1,0 +1,11 @@
+@import '../livros/livros.component.scss';
+
+.table td:nth-child(2) {
+  max-width: 300px;
+  word-wrap: break-word;
+}
+
+textarea {
+  resize: vertical;
+  min-height: 100px;
+}

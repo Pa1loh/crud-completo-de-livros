@@ -1,0 +1,156 @@
+.app-container {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.app-header {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  padding: 1rem 2rem;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+
+  h1 {
+    margin: 0;
+    font-size: 1.8rem;
+    font-weight: 300;
+    margin-bottom: 1rem;
+  }
+
+  nav {
+    display: flex;
+    gap: 2rem;
+
+    a {
+      color: white;
+      text-decoration: none;
+      padding: 0.5rem 1rem;
+      border-radius: 4px;
+      transition: background-color 0.3s ease;
+      font-weight: 500;
+      cursor: pointer;
+
+      &:hover {
+        background-color: rgba(255, 255, 255, 0.1);
+      }
+
+      &.active {
+        background-color: rgba(255, 255, 255, 0.2);
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+      }
+    }
+  }
+}
+
+.app-main {
+  flex: 1;
+  padding: 2rem;
+  background-color: #f8f9fa;
+}
+
+// Global styles
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  background-color: #f8f9fa;
+}
+
+.btn {
+  padding: 0.75rem 1.5rem;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: 500;
+  transition: all 0.3s ease;
+  text-decoration: none;
+  display: inline-block;
+  text-align: center;
+
+  &.btn-primary {
+    background-color: #667eea;
+    color: white;
+
+    &:hover {
+      background-color: #5a67d8;
+    }
+  }
+
+  &.btn-secondary {
+    background-color: #6c757d;
+    color: white;
+
+    &:hover {
+      background-color: #5a6268;
+    }
+  }
+
+  &.btn-danger {
+    background-color: #dc3545;
+    color: white;
+
+    &:hover {
+      background-color: #c82333;
+    }
+  }
+}
+
+.card {
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  padding: 1.5rem;
+  margin-bottom: 1rem;
+}
+
+.form-group {
+  margin-bottom: 1rem;
+
+  label {
+    display: block;
+    margin-bottom: 0.5rem;
+    font-weight: 600;
+    color: #495057;
+  }
+
+  input, textarea, select {
+    width: 100%;
+    padding: 0.75rem;
+    border: 1px solid #ced4da;
+    border-radius: 4px;
+    font-size: 1rem;
+
+    &:focus {
+      outline: none;
+      border-color: #667eea;
+      box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.25);
+    }
+  }
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  background: white;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+
+  th, td {
+    padding: 1rem;
+    text-align: left;
+    border-bottom: 1px solid #dee2e6;
+  }
+
+  th {
+    background-color: #f8f9fa;
+    font-weight: 600;
+  }
+
+  tbody tr:hover {
+    background-color: #f8f9fa;
+  }
+}
