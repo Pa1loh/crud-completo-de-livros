@@ -10,14 +10,7 @@
     <div class="loading"></div>
   </div>
 
-  <div class="alert alert-danger" *ngIf="erro">
-    {{ erro }}
-    <button class="btn btn-sm btn-outline-danger ms-2" (click)="carregarDados()">
-      Tentar Novamente
-    </button>
-  </div>
-
-  <div class="card" *ngIf="!carregando && !erro">
+  <div class="card" *ngIf="!carregando">
     <div class="table-responsive">
       <table class="table">
         <thead>
@@ -91,6 +84,7 @@
               <span *ngIf="titulo.errors?.['maxlength']">Título não pode ter mais de 200 caracteres</span>
             </div>
           </div>
+          
           <div class="form-group">
             <label for="autorId">Autor *</label>
             <select
@@ -111,7 +105,7 @@
               Autor é obrigatório
             </div>
           </div>
-
+          
           <div class="form-group">
             <label for="generoId">Gênero *</label>
             <select
@@ -135,18 +129,14 @@
         </div>
 
         <div class="modal-footer">
-          <button 
-            type="button" 
-            class="btn btn-secondary" 
-            (click)="fecharModal()"
-            [disabled]="salvando">
+          <button type="button" class="btn btn-secondary" (click)="fecharModal()" [disabled]="salvando">
             Cancelar
           </button>
           <button 
             type="submit" 
             class="btn btn-primary"
-            [disabled]="livroForm.invalid || salvando">
-            <span *ngIf="salvando" class="spinner-border spinner-border-sm me-2"></span>
+            [disabled]="livroForm.invalid || salvando"
+          >
             {{ salvando ? 'Salvando...' : 'Salvar' }}
           </button>
         </div>

@@ -1,0 +1,89 @@
+<div class="container">
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <h2>Gerenciamento de Autores</h2>
+    <button class="btn btn-primary" (click)="abrirModalCriar()">
+      Novo Autor
+    </button>
+  </div>
+
+  <div class="card" *ngIf="carregando">
+    <div class="loading"></div>
+  </div>
+
+  <div class="card" *ngIf="!carregando">
+    <div class="table-responsive">
+      <table class="table">
+        <thead>
+          <tr>
+            <th>Nome</th>
+            <th>Ações</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let autor of autores">
+            <td>{{ autor.nome }}</td>
+            <td>
+              <div class="d-flex gap-2">
+                <button class="btn btn-secondary btn-sm" (click)="editarAutor(autor)">
+                  Editar
+                </button>
+                <button class="btn btn-danger btn-sm" (click)="excluirAutor(autor.id)">
+                  Excluir
+                </button>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div *ngIf="autores.length === 0" class="text-center py-4">
+      <p class="text-muted">Nenhum autor cadastrado</p>
+      <button class="btn btn-primary" (click)="abrirModalCriar()">
+        Cadastrar Primeiro Autor
+      </button>
+    </div>
+  </div>
+
+  <div class="modal" *ngIf="exibirModal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3>{{ autorEdicao ? 'Editar Autor' : 'Novo Autor' }}</h3>
+        <button class="btn-close" (click)="fecharModal()">&times;</button>
+      </div>
+      <form (ngSubmit)="salvarAutor()" #autorForm="ngForm">
+        <div class="modal-body">
+          <div class="form-group">
+            <label for="nome">Nome*</label>
+            <input
+              type="text"
+              id="nome"
+              [(ngModel)]="formularioAutor.nome"
+              name="nome"
+              required
+              class="form-control"
+              #nome="ngModel"
+              [class.is-invalid]="nome.invalid && nome.touched"
+            />
+            <div class="invalid-feedback" *ngIf="nome.invalid && nome.touched">
+              Nome é obrigatório
+            </div>
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" (click)="fecharModal()">
+            Cancelar
+          </button>
+          <button 
+            type="submit" 
+            class="btn btn-primary"
+            [disabled]="autorForm.invalid || salvando"
+          >
+            {{ salvando ? 'Salvando...' : 'Salvar' }}
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>

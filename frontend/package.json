@@ -1,14 +1,13 @@
 {
-  "name": "frontend-livros",
-  "private": true,
+  "name": "livros-frontend",
   "version": "0.0.0",
-  "type": "module",
   "scripts": {
     "ng": "ng",
-    "start": "ng serve",
+    "start": "ng serve --host 0.0.0.0 --port 4200",
     "build": "ng build",
-    "test": "ng test"
+    "watch": "ng build --watch --configuration development"
   },
+  "private": true,
   "dependencies": {
     "@angular/animations": "^17.0.0",
     "@angular/common": "^17.0.0",

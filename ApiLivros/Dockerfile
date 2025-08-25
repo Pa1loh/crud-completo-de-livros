@@ -1,23 +1,23 @@
-﻿FROM mcr.microsoft.com/dotnet/sdk:9.0 AS development
-
+﻿FROM mcr.microsoft.com/dotnet/sdk:9.0
 WORKDIR /app
 
-COPY *.sln ./
-COPY ApiLivros/*.csproj ApiLivros/
-COPY Dominio/*.csproj Dominio/
-COPY Servico/*.csproj Servico/
-COPY Infraestrutura/*.csproj Infraestrutura/
-COPY Teste/*.csproj Teste/
+RUN apt-get update && apt-get install -y netcat-openbsd && rm -rf /var/lib/apt/lists/*
 
-RUN dotnet restore ApiLivros/ApiLivros.csproj
+COPY ApiLivros.sln ./
+COPY ApiLivros/*.csproj ./ApiLivros/
+COPY Dominio/*.csproj ./Dominio/
+COPY Infraestrutura/*.csproj ./Infraestrutura/
+COPY Servico/*.csproj ./Servico/
+COPY Teste/*.csproj ./Teste/
+
+RUN dotnet restore
+RUN dotnet tool install --global dotnet-ef
+ENV PATH="$PATH:/root/.dotnet/tools"
 
 COPY . .
-
-RUN dotnet tool install --global dotnet-ef
-ENV PATH="${PATH}:/root/.dotnet/tools"
-
-EXPOSE 8080
+RUN chmod +x ApiLivros/wait-for-postgres.sh
 
 WORKDIR /app/ApiLivros
+EXPOSE 8080
 
-CMD ["dotnet", "watch", "run", "--urls", "http://0.0.0.0:8080"]
+CMD ["./wait-for-postgres.sh"]

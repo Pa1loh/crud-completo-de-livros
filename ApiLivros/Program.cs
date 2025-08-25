@@ -4,52 +4,39 @@ using ApiLivros.Middleware;
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddControllers();
-builder.Services.AdicionarDependencias(builder.Configuration);
-
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen(opcoes =>
+builder.Services.AddSwaggerGen(c =>
 {
-    opcoes.SwaggerDoc("v1", new Microsoft.OpenApi.Models.OpenApiInfo
-    {
-        Title = "API de Livros",
-        Version = "v1",
-        Description = "Exemplo de crud completo com o contexto de livros",
-        Contact = new Microsoft.OpenApi.Models.OpenApiContact
-        {
-            Name = "Paulo",
-            Email = "pcarmofaria@hotmail.com"
-        }
-    });
+    c.SwaggerDoc("v1", new() { Title = "API Livros", Version = "v1" });
 });
 
-builder.Services.AddCors(opcoes =>
+builder.Services.AdicionarDependencias(builder.Configuration);
+
+builder.Services.AddCors(options =>
 {
-    opcoes.AddPolicy("PermitirTodos", policy =>
+    options.AddPolicy("PermitirFrontend", policy =>
     {
-        policy.AllowAnyOrigin()
-            .AllowAnyMethod()
-            .AllowAnyHeader();
+        policy.WithOrigins(
+                "http://localhost:4200",
+                "http://frontend:4200",
+                "http://livros-frontend:4200"
+              )
+              .AllowAnyMethod()
+              .AllowAnyHeader()
+              .AllowCredentials();
     });
 });
 
 var app = builder.Build();
 
-app.UseMiddleware<TratamentoGlobalErros>();
-
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
-    app.UseSwaggerUI(opcoes =>
-    {
-        opcoes.SwaggerEndpoint("/swagger/v1/swagger.json", "API de Livros v1.0");
-        opcoes.RoutePrefix = string.Empty;
-        opcoes.DocumentTitle = "API de Livros - Documentação";
-        opcoes.DisplayRequestDuration();
-    });
+    app.UseSwaggerUI();
 }
 
-app.UseHttpsRedirection();
-app.UseCors("PermitirTodos");
+app.UseMiddleware<TratamentoGlobalErros>();
+app.UseCors("PermitirFrontend");
 app.UseAuthorization();
 app.MapControllers();
 

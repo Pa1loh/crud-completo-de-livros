@@ -20,7 +20,6 @@ export class LivrosComponent implements OnInit {
   autores: Autor[] = [];
   generos: Genero[] = [];
   carregando = false;
-  erro: string | null = null;
   exibirModal = false;
   salvando = false;
   livroEdicao: Livro | null = null;
@@ -30,10 +29,6 @@ export class LivrosComponent implements OnInit {
     autorId: 0,
     generoId: 0
   };
-
-  get anoAtual(): number {
-    return new Date().getFullYear();
-  }
 
   constructor(
     private livroServico: LivroServico,
@@ -92,10 +87,6 @@ export class LivrosComponent implements OnInit {
   }
 
   async salvarLivro(): Promise<void> {
-    if (this.salvando) {
-      return;
-    }
-
     this.salvando = true;
     
     try {
@@ -108,11 +99,10 @@ export class LivrosComponent implements OnInit {
       } else {
         await this.livroServico.criar(this.formularioLivro).toPromise();
       }
-      
+
+      await this.carregarDados();
       this.fecharModal();
-      await this.carregarLivros();
     } catch (erro) {
-      this.erro = 'Erro ao salvar livro. Tente novamente.';
     } finally {
       this.salvando = false;
     }
@@ -125,9 +115,8 @@ export class LivrosComponent implements OnInit {
 
     try {
       await this.livroServico.excluir(id).toPromise();
-      await this.carregarLivros();
+      await this.carregarDados();
     } catch (erro) {
-      this.erro = 'Erro ao excluir livro. Tente novamente.';
     }
   }
 
@@ -136,9 +125,8 @@ export class LivrosComponent implements OnInit {
     this.livroEdicao = null;
   }
 
-  async carregarDados(): Promise<void> {
+  private async carregarDados(): Promise<void> {
     this.carregando = true;
-    this.erro = null;
     
     try {
       const [livros, autores, generos] = await Promise.all([
@@ -151,17 +139,8 @@ export class LivrosComponent implements OnInit {
       this.autores = autores || [];
       this.generos = generos || [];
     } catch (erro) {
-      this.erro = 'Erro ao carregar dados. Tente novamente.';
     } finally {
       this.carregando = false;
-    }
-  }
-
-  private async carregarLivros(): Promise<void> {
-    try {
-      this.livros = await this.livroServico.obterTodos().toPromise() || [];
-    } catch (erro) {
-      this.erro = 'Erro ao carregar livros. Tente novamente.';
     }
   }
 }
